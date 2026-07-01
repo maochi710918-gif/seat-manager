@@ -841,18 +841,6 @@ function uploadFloorplan(event) {
   event.target.value = '';
 }
 
-function showFloorplan(base64) {
-  const img = document.getElementById('floorplan-img');
-  const empty = document.getElementById('floorplan-empty');
-  const delBtn = document.getElementById('btn-del-img');
-  const zoomImg = document.getElementById('zoom-img');
-  img.src = base64;
-  zoomImg.src = base64;
-  img.style.display = 'block';
-  empty.style.display = 'none';
-  delBtn.style.display = 'inline-flex';
-}
-
 function deleteFloorplan() {
   if (!confirm('確定要移除配置圖？')) return;
   localStorage.removeItem(FLOORPLAN_KEY);
@@ -875,7 +863,25 @@ function closeZoom() {
 
 function loadFloorplan() {
   const saved = localStorage.getItem(FLOORPLAN_KEY);
-  if (saved) showFloorplan(saved);
+  if (saved) {
+    showFloorplan(saved);
+  } else {
+    // Show default bundled floor plan
+    showFloorplan('floorplan.png');
+  }
+}
+
+function showFloorplan(src) {
+  const img = document.getElementById('floorplan-img');
+  const empty = document.getElementById('floorplan-empty');
+  const delBtn = document.getElementById('btn-del-img');
+  const zoomImg = document.getElementById('zoom-img');
+  img.src = src;
+  zoomImg.src = src;
+  img.style.display = 'block';
+  empty.style.display = 'none';
+  // Only show delete button if it's a custom uploaded image (base64)
+  delBtn.style.display = src.startsWith('data:') ? 'inline-flex' : 'none';
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
