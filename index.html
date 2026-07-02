@@ -625,6 +625,31 @@
     .seats-grid.green-grid { grid-template-columns: repeat(3, 1fr); }
     .seat.circle { width: 56px; height: 56px; font-size: 0.75rem; }
   }
+  /* ── Sync status bar ── */
+  .sync-bar {
+    background: #1a3c5e;
+    color: rgba(255,255,255,0.75);
+    font-size: 0.75rem;
+    text-align: center;
+    padding: 4px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 26px;
+  }
+  .sync-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    background: #aaa;
+    flex-shrink: 0;
+  }
+  .sync-dot.ok    { background: #4caf50; }
+  .sync-dot.busy  { background: #ffc107; animation: blink 0.8s infinite; }
+  .sync-dot.error { background: #f44336; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .sync-bar .sync-time { opacity: 0.6; }
 </style>
 </head>
 <body>
@@ -633,6 +658,11 @@
   <h1>裕信汽車濱江廠 · 客休區座位管理系統</h1>
   <p>點擊座位可登錄或查詢客戶資訊</p>
 </header>
+<div class="sync-bar">
+  <span class="sync-dot" id="sync-dot"></span>
+  <span id="sync-msg">連線中…</span>
+  <span class="sync-time" id="sync-time"></span>
+</div>
 
 <div class="main-container">
 
@@ -785,21 +815,105 @@ const SEATS = {
   金: ['金1','金2','金3','金4','金5','金6','金7','金8','金9','金10'],
   黑: ['黑1','黑2','黑3','黑4','黑5']
 };
-const STORAGE_KEY = 'seat_manager_data';
+const GH_TOKEN  = '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';
+const GH_REPO   = 'maochi710918-gif/seat-manager';
+const FLOORPLAN_KEY = 'seat_manager_floorplan';
 
 // ─── State ────────────────────────────────────────────────────────────────────
-let data = loadData();
+let data = {};
 let currentSeat = null;
 let editMode = false;
-let searchActive = false;
+let isSyncing = false;
 
-// ─── Persistence ──────────────────────────────────────────────────────────────
-function loadData() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
-  catch { return {}; }
+// ─── GitHub API helpers ───────────────────────────────────────────────────────
+async function ghGetFile(path) {
+  const res = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${path}`, {
+    headers: { 'Authorization': `token ${GH_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' },
+    cache: 'no-store'
+  });
+  return res.ok ? await res.json() : null;
 }
-function saveData() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+function ghDecode(file) {
+  try { return JSON.parse(decodeURIComponent(escape(atob(file.content.replace(/\n/g, ''))))); }
+  catch { return null; }
+}
+
+async function ghWriteFile(path, obj) {
+  const file = await ghGetFile(path);
+  if (!file) throw new Error('Cannot fetch ' + path);
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
+  const res = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${path}`, {
+    method: 'PUT',
+    headers: { 'Authorization': `token ${GH_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: 'Update ' + path, content: encoded, sha: file.sha })
+  });
+  if (!res.ok) throw new Error('Write failed');
+}
+
+// ─── Sync status UI ───────────────────────────────────────────────────────────
+function setSyncStatus(state, msg) {
+  const dot = document.getElementById('sync-dot');
+  const msgEl = document.getElementById('sync-msg');
+  const timeEl = document.getElementById('sync-time');
+  dot.className = 'sync-dot ' + (state === 'ok' ? 'ok' : state === 'busy' ? 'busy' : 'error');
+  msgEl.textContent = msg || (state === 'ok' ? '已同步' : state === 'busy' ? '同步中…' : '同步失敗');
+  if (state === 'ok') timeEl.textContent = '最後更新 ' + new Date().toLocaleTimeString('zh-TW');
+  else timeEl.textContent = '';
+}
+
+// ─── Load & Save seat data ────────────────────────────────────────────────────
+async function loadData() {
+  const file = await ghGetFile('data.json');
+  if (file) { const parsed = ghDecode(file); if (parsed) data = parsed; }
+  renderAll();
+  setSyncStatus('ok');
+}
+
+async function saveData() {
+  isSyncing = true;
+  setSyncStatus('busy');
+  try {
+    await ghWriteFile('data.json', data);
+    setSyncStatus('ok');
+  } catch(e) {
+    setSyncStatus('error', '同步失敗，請重試');
+    showToast('⚠️ 資料同步失敗');
+  }
+  isSyncing = false;
+}
+
+// ─── Auto-poll: refresh data every 8 seconds ─────────────────────────────────
+let _lastDataStr = '{}';
+async function pollData() {
+  if (isSyncing) { setTimeout(pollData, 8000); return; }
+  try {
+    const file = await ghGetFile('data.json');
+    if (file) {
+      const parsed = ghDecode(file);
+      if (parsed) {
+        const newStr = JSON.stringify(parsed);
+        if (newStr !== _lastDataStr) {
+          _lastDataStr = newStr;
+          data = parsed;
+          renderAll();
+          setSyncStatus('ok', '已接收更新');
+        } else {
+          setSyncStatus('ok');
+        }
+      }
+    }
+    // Also poll notices
+    const nf = await ghGetFile('notices.json');
+    if (nf) {
+      const np = ghDecode(nf);
+      if (np) {
+        const ns = JSON.stringify(np);
+        if (ns !== _lastNoticesStr) { _lastNoticesStr = ns; _notices = np; renderNotices(); }
+      }
+    }
+  } catch(e) { setSyncStatus('error', '網路連線中斷'); }
+  setTimeout(pollData, 8000);
 }
 
 // ─── Render ───────────────────────────────────────────────────────────────────
@@ -939,7 +1053,7 @@ function showEditModal(seatId) {
   `;
 }
 
-function doCheckIn() {
+async function doCheckIn() {
   const plate = document.getElementById('inp-plate').value.trim();
   if (!plate) { showToast('⚠️ 請填寫車牌號碼'); return; }
   data[currentSeat] = {
@@ -948,13 +1062,14 @@ function doCheckIn() {
     note: document.getElementById('inp-note').value.trim(),
     time: Date.now()
   };
-  saveData();
+  _lastDataStr = JSON.stringify(data);
   renderAll();
   closeModal();
   showToast(`✅ ${currentSeat} 已登錄 ${plate}`);
+  await saveData();
 }
 
-function doUpdate(seatId) {
+async function doUpdate(seatId) {
   const plate = document.getElementById('inp-plate').value.trim();
   if (!plate) { showToast('⚠️ 請填寫車牌號碼'); return; }
   data[seatId] = {
@@ -963,20 +1078,22 @@ function doUpdate(seatId) {
     name: document.getElementById('inp-name').value.trim(),
     note: document.getElementById('inp-note').value.trim(),
   };
-  saveData();
+  _lastDataStr = JSON.stringify(data);
   renderAll();
   closeModal();
   showToast(`💾 ${seatId} 資料已更新`);
+  await saveData();
 }
 
-function doCheckOut(seatId) {
+async function doCheckOut(seatId) {
   const plate = data[seatId]?.plate || '';
   if (!confirm(`確定要讓 ${seatId}（${plate}）結案離座？`)) return;
   delete data[seatId];
-  saveData();
+  _lastDataStr = JSON.stringify(data);
   renderAll();
   closeModal();
   showToast(`🚗 ${seatId} ${plate} 已結案離座`);
+  await saveData();
 }
 
 function closeModal() {
@@ -1142,24 +1259,20 @@ function updateSummaryTable() {
 }
 
 // ─── Bulletin Board ───────────────────────────────────────────────────────────
-const NOTICES_KEY = 'seat_manager_notices';
+let _notices = [];
+let _lastNoticesStr = '[]';
 
-function loadNotices() {
-  try { return JSON.parse(localStorage.getItem(NOTICES_KEY)) || []; }
-  catch { return []; }
-}
-function saveNotices(arr) {
-  localStorage.setItem(NOTICES_KEY, JSON.stringify(arr));
+async function saveNotices() {
+  try { await ghWriteFile('notices.json', _notices); }
+  catch(e) { showToast('⚠️ 公告同步失敗'); }
 }
 function renderNotices() {
-  const notices = loadNotices();
-  const listEl  = document.getElementById('notice-list');
-  const emptyEl = document.getElementById('notice-empty');
-  if (notices.length === 0) {
-    listEl.innerHTML = '<div class="notice-empty" id="notice-empty">暫無公告</div>';
+  const listEl = document.getElementById('notice-list');
+  if (_notices.length === 0) {
+    listEl.innerHTML = '<div class="notice-empty">暫無公告</div>';
     return;
   }
-  listEl.innerHTML = notices.map((n, i) => `
+  listEl.innerHTML = _notices.map((n, i) => `
     <div class="notice-item">
       <button class="btn-notice-del" onclick="deleteNotice(${i})" title="刪除">✕</button>
       <div class="notice-text">${escapeHtml(n.text)}</div>
@@ -1167,31 +1280,35 @@ function renderNotices() {
     </div>
   `).join('');
 }
-function postNotice() {
+async function postNotice() {
   const inp  = document.getElementById('notice-input');
   const text = inp.value.trim();
   if (!text) { showToast('⚠️ 請輸入公告內容'); return; }
-  const notices = loadNotices();
-  notices.unshift({ text, time: Date.now() });
-  saveNotices(notices);
+  _notices.unshift({ text, time: Date.now() });
+  _lastNoticesStr = JSON.stringify(_notices);
   renderNotices();
   inp.value = '';
   showToast('📢 公告已發布');
+  await saveNotices();
 }
-function deleteNotice(index) {
-  const notices = loadNotices();
-  notices.splice(index, 1);
-  saveNotices(notices);
+async function deleteNotice(index) {
+  _notices.splice(index, 1);
+  _lastNoticesStr = JSON.stringify(_notices);
   renderNotices();
+  await saveNotices();
 }
 function escapeHtml(str) {
   return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g,'<br>');
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
+setSyncStatus('busy', '連線中…');
 renderAll();
 loadFloorplan();
-renderNotices();
+Promise.all([
+  loadData(),
+  ghGetFile('notices.json').then(f => { if(f){const p=ghDecode(f);if(p){_notices=p;_lastNoticesStr=JSON.stringify(p);renderNotices();}} })
+]).then(() => { setTimeout(pollData, 8000); });
 </script>
 </body>
 </html>
