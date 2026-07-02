@@ -443,8 +443,179 @@
   }
   .floorplan-body img { cursor: zoom-in; }
 
-  /* Responsive */
+  /* ── Content two-column layout ── */
+  .content-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 16px;
+    align-items: start;
+  }
+  .zones-col { display: flex; flex-direction: column; gap: 16px; }
+
+  /* ── Sidebar ── */
+  .sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+  /* ── 總表 Summary Table ── */
+  .summary-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+  .summary-header {
+    background: linear-gradient(135deg, #1a3c5e, #2d6a9f);
+    color: white;
+    padding: 10px 16px;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .summary-count {
+    background: rgba(255,255,255,0.25);
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+  }
+  .summary-body { padding: 0; max-height: 420px; overflow-y: auto; }
+  .summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+  .summary-table thead tr {
+    background: #f0f4fa;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .summary-table th {
+    padding: 7px 8px;
+    text-align: left;
+    color: #555;
+    font-weight: 700;
+    border-bottom: 1px solid #e0e0e0;
+    white-space: nowrap;
+  }
+  .summary-table td {
+    padding: 7px 8px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: top;
+  }
+  .summary-table tr:last-child td { border-bottom: none; }
+  .summary-table tr:hover td { background: #f8f9ff; cursor: pointer; }
+  .summary-seat-badge {
+    display: inline-block;
+    background: #1a3c5e;
+    color: white;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .summary-plate { font-weight: 800; color: #c0392b; letter-spacing: 1px; }
+  .summary-empty {
+    text-align: center;
+    padding: 28px 16px;
+    color: #bbb;
+    font-size: 0.9rem;
+  }
+
+  /* ── 公告欄 Bulletin Board ── */
+  .notice-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+  .notice-header {
+    background: linear-gradient(135deg, #7b4f12, #b8860b);
+    color: white;
+    padding: 10px 16px;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .notice-body { padding: 12px; }
+  .notice-input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .notice-input-row textarea {
+    flex: 1;
+    border: 1.5px solid #d0d5dd;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    resize: none;
+    height: 68px;
+    transition: border-color 0.2s;
+  }
+  .notice-input-row textarea:focus {
+    outline: none;
+    border-color: #b8860b;
+    box-shadow: 0 0 0 3px rgba(184,134,11,0.15);
+  }
+  .btn-notice-post {
+    background: #b8860b;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0 14px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+  }
+  .btn-notice-post:hover { opacity: 0.85; }
+  .notice-list { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; }
+  .notice-item {
+    background: #fffde7;
+    border: 1px solid #f0d060;
+    border-radius: 8px;
+    padding: 9px 12px;
+    position: relative;
+  }
+  .notice-text { font-size: 0.88rem; color: #333; line-height: 1.5; word-break: break-word; }
+  .notice-time { font-size: 0.72rem; color: #aaa; margin-top: 5px; }
+  .btn-notice-del {
+    position: absolute;
+    top: 7px; right: 8px;
+    background: none;
+    border: none;
+    color: #ccc;
+    font-size: 1rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+  }
+  .btn-notice-del:hover { color: #e03a3a; background: #fff0f0; }
+  .notice-empty {
+    text-align: center;
+    color: #ccc;
+    font-size: 0.85rem;
+    padding: 20px 0;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .content-layout { grid-template-columns: 1fr; }
+    .sidebar { flex-direction: row; flex-wrap: wrap; }
+    .summary-card, .notice-card { flex: 1; min-width: 280px; }
+    .summary-body { max-height: 260px; }
+    .notice-list { max-height: 200px; }
+  }
   @media (max-width: 600px) {
+    .sidebar { flex-direction: column; }
     .seats-grid.white-grid { grid-template-columns: repeat(3, 1fr); }
     .seats-grid.gold-grid  { grid-template-columns: repeat(4, 1fr); }
     .seat.circle { width: 62px; height: 62px; }
@@ -515,29 +686,80 @@
     <span class="zoom-hint">點擊任意處關閉</span>
   </div>
 
-  <!-- 白區 -->
-  <div class="zone-card zone-white">
-    <div class="zone-header">⚪ 白區 — 服務專員談區（圓形座位）</div>
-    <div class="zone-body">
-      <div class="seats-grid white-grid" id="zone-white"></div>
-    </div>
-  </div>
+  <!-- Two-column layout: zones + sidebar -->
+  <div class="content-layout">
 
-  <!-- 金區 -->
-  <div class="zone-card zone-gold">
-    <div class="zone-header">🟡 金區 — 方形座位</div>
-    <div class="zone-body">
-      <div class="seats-grid gold-grid" id="zone-gold"></div>
-    </div>
-  </div>
+    <!-- Left: seat zones -->
+    <div class="zones-col">
 
-  <!-- 黑區 -->
-  <div class="zone-card zone-black">
-    <div class="zone-header">⚫ 黑區 — 圓形座位</div>
-    <div class="zone-body">
-      <div class="seats-grid black-grid" id="zone-black"></div>
-    </div>
-  </div>
+      <!-- 白區 -->
+      <div class="zone-card zone-white">
+        <div class="zone-header">⚪ 白區 — 服務專員談區（圓形座位）</div>
+        <div class="zone-body">
+          <div class="seats-grid white-grid" id="zone-white"></div>
+        </div>
+      </div>
+
+      <!-- 金區 -->
+      <div class="zone-card zone-gold">
+        <div class="zone-header">🟡 金區 — 方形座位</div>
+        <div class="zone-body">
+          <div class="seats-grid gold-grid" id="zone-gold"></div>
+        </div>
+      </div>
+
+      <!-- 黑區 -->
+      <div class="zone-card zone-black">
+        <div class="zone-header">⚫ 黑區 — 圓形座位</div>
+        <div class="zone-body">
+          <div class="seats-grid black-grid" id="zone-black"></div>
+        </div>
+      </div>
+
+    </div><!-- /zones-col -->
+
+    <!-- Right: sidebar -->
+    <div class="sidebar">
+
+      <!-- 總表 -->
+      <div class="summary-card">
+        <div class="summary-header">
+          📋 在座總表
+          <span class="summary-count" id="summary-count">0 位</span>
+        </div>
+        <div class="summary-body">
+          <div id="summary-empty" class="summary-empty">目前無客人在座</div>
+          <table class="summary-table" id="summary-table" style="display:none">
+            <thead>
+              <tr>
+                <th>座位</th>
+                <th>車牌</th>
+                <th>稱呼</th>
+                <th>特徵</th>
+              </tr>
+            </thead>
+            <tbody id="summary-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 公告欄 -->
+      <div class="notice-card">
+        <div class="notice-header">📢 公告欄</div>
+        <div class="notice-body">
+          <div class="notice-input-row">
+            <textarea id="notice-input" placeholder="輸入公告內容…"></textarea>
+            <button class="btn-notice-post" onclick="postNotice()">發布</button>
+          </div>
+          <div class="notice-list" id="notice-list">
+            <div class="notice-empty" id="notice-empty">暫無公告</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /sidebar -->
+
+  </div><!-- /content-layout -->
 
 </div>
 
@@ -586,6 +808,7 @@ function renderAll() {
   renderZone('zone-gold',  SEATS.金, 'square');
   renderZone('zone-black', SEATS.黑, 'circle');
   updateStats();
+  updateSummaryTable();
 }
 
 function renderZone(containerId, seats, shape) {
@@ -888,9 +1111,87 @@ function showFloorplan(src) {
   delBtn.style.display = src.startsWith('data:') ? 'inline-flex' : 'none';
 }
 
+// ─── Summary Table ────────────────────────────────────────────────────────────
+function updateSummaryTable() {
+  const entries = Object.entries(data);
+  const countEl = document.getElementById('summary-count');
+  const emptyEl = document.getElementById('summary-empty');
+  const tableEl = document.getElementById('summary-table');
+  const tbody   = document.getElementById('summary-tbody');
+
+  countEl.textContent = entries.length + ' 位';
+  if (entries.length === 0) {
+    emptyEl.style.display = 'block';
+    tableEl.style.display = 'none';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  tableEl.style.display = 'table';
+
+  // Sort by check-in time ascending
+  entries.sort((a, b) => (a[1].time || 0) - (b[1].time || 0));
+
+  tbody.innerHTML = entries.map(([seatId, info]) => `
+    <tr onclick="handleSeatClick('${seatId}')" title="點擊查看詳細">
+      <td><span class="summary-seat-badge">${seatId}</span></td>
+      <td class="summary-plate">${info.plate}</td>
+      <td>${info.name || '—'}</td>
+      <td style="max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${info.note || ''}">${info.note || '—'}</td>
+    </tr>
+  `).join('');
+}
+
+// ─── Bulletin Board ───────────────────────────────────────────────────────────
+const NOTICES_KEY = 'seat_manager_notices';
+
+function loadNotices() {
+  try { return JSON.parse(localStorage.getItem(NOTICES_KEY)) || []; }
+  catch { return []; }
+}
+function saveNotices(arr) {
+  localStorage.setItem(NOTICES_KEY, JSON.stringify(arr));
+}
+function renderNotices() {
+  const notices = loadNotices();
+  const listEl  = document.getElementById('notice-list');
+  const emptyEl = document.getElementById('notice-empty');
+  if (notices.length === 0) {
+    listEl.innerHTML = '<div class="notice-empty" id="notice-empty">暫無公告</div>';
+    return;
+  }
+  listEl.innerHTML = notices.map((n, i) => `
+    <div class="notice-item">
+      <button class="btn-notice-del" onclick="deleteNotice(${i})" title="刪除">✕</button>
+      <div class="notice-text">${escapeHtml(n.text)}</div>
+      <div class="notice-time">${new Date(n.time).toLocaleString('zh-TW')}</div>
+    </div>
+  `).join('');
+}
+function postNotice() {
+  const inp  = document.getElementById('notice-input');
+  const text = inp.value.trim();
+  if (!text) { showToast('⚠️ 請輸入公告內容'); return; }
+  const notices = loadNotices();
+  notices.unshift({ text, time: Date.now() });
+  saveNotices(notices);
+  renderNotices();
+  inp.value = '';
+  showToast('📢 公告已發布');
+}
+function deleteNotice(index) {
+  const notices = loadNotices();
+  notices.splice(index, 1);
+  saveNotices(notices);
+  renderNotices();
+}
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g,'<br>');
+}
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
 renderAll();
 loadFloorplan();
+renderNotices();
 </script>
 </body>
 </html>
