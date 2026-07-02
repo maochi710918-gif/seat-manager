@@ -195,6 +195,14 @@
   .modal-body { padding: 16px 20px; }
 
   .form-group { margin-bottom: 14px; }
+  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-group select {
+    width: 100%; padding: 9px 12px;
+    border: 1.5px solid #d0d5dd; border-radius: 8px;
+    font-size: 0.95rem; font-family: inherit;
+    background: white; cursor: pointer;
+  }
+  .form-group select:focus { outline: none; border-color: #2d6a9f; box-shadow: 0 0 0 3px rgba(45,106,159,0.15); }
   .form-group label {
     display: block;
     font-size: 0.85rem;
@@ -960,9 +968,32 @@ function showCheckInModal(seatId) {
       <label>車主姓名／稱呼</label>
       <input type="text" id="inp-name" placeholder="例：林先生" maxlength="20">
     </div>
+    <div class="form-group form-row-2">
+      <div>
+        <label>性別</label>
+        <select id="inp-gender">
+          <option value="">未填</option>
+          <option value="男性">男性</option>
+          <option value="女性">女性</option>
+        </select>
+      </div>
+      <div>
+        <label>服務項目</label>
+        <select id="inp-service">
+          <option value="">未填</option>
+          <option value="定保">定保</option>
+          <option value="維修">維修</option>
+          <option value="其他">其他</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>預估交車時間</label>
+      <input type="time" id="inp-eta">
+    </div>
     <div class="form-group">
       <label>外觀特徵備註</label>
-      <textarea id="inp-note" rows="3" placeholder="例：穿藍色外套、戴帽子、在看筆電"></textarea>
+      <textarea id="inp-note" rows="2" placeholder="例：穿藍色外套、戴帽子、在看筆電"></textarea>
     </div>
   `;
   document.getElementById('modal-footer').innerHTML = `
@@ -984,6 +1015,18 @@ function showInfoModal(seatId, info) {
     <div class="info-row">
       <span class="info-label">車主稱呼</span>
       <span class="info-value">${info.name || '（未填寫）'}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">性別</span>
+      <span class="info-value">${info.gender || '（未填寫）'}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">服務項目</span>
+      <span class="info-value">${info.service || '（未填寫）'}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">預估交車</span>
+      <span class="info-value">${info.eta || '（未填寫）'}</span>
     </div>
     <div class="info-row">
       <span class="info-label">外觀特徵</span>
@@ -1015,9 +1058,32 @@ function showEditModal(seatId) {
       <label>車主姓名／稱呼</label>
       <input type="text" id="inp-name" value="${info.name || ''}" maxlength="20">
     </div>
+    <div class="form-group form-row-2">
+      <div>
+        <label>性別</label>
+        <select id="inp-gender">
+          <option value="">未填</option>
+          <option value="男性" ${info.gender==='男性'?'selected':''}>男性</option>
+          <option value="女性" ${info.gender==='女性'?'selected':''}>女性</option>
+        </select>
+      </div>
+      <div>
+        <label>服務項目</label>
+        <select id="inp-service">
+          <option value="">未填</option>
+          <option value="定保" ${info.service==='定保'?'selected':''}>定保</option>
+          <option value="維修" ${info.service==='維修'?'selected':''}>維修</option>
+          <option value="其他" ${info.service==='其他'?'selected':''}>其他</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>預估交車時間</label>
+      <input type="time" id="inp-eta" value="${info.eta || ''}">
+    </div>
     <div class="form-group">
       <label>外觀特徵備註</label>
-      <textarea id="inp-note" rows="3">${info.note || ''}</textarea>
+      <textarea id="inp-note" rows="2">${info.note || ''}</textarea>
     </div>
   `;
   document.getElementById('modal-footer').innerHTML = `
@@ -1032,6 +1098,9 @@ async function doCheckIn() {
   data[currentSeat] = {
     plate,
     name: document.getElementById('inp-name').value.trim(),
+    gender: document.getElementById('inp-gender').value,
+    service: document.getElementById('inp-service').value,
+    eta: document.getElementById('inp-eta').value,
     note: document.getElementById('inp-note').value.trim(),
     time: Date.now()
   };
@@ -1048,6 +1117,9 @@ async function doUpdate(seatId) {
     ...data[seatId],
     plate,
     name: document.getElementById('inp-name').value.trim(),
+    gender: document.getElementById('inp-gender').value,
+    service: document.getElementById('inp-service').value,
+    eta: document.getElementById('inp-eta').value,
     note: document.getElementById('inp-note').value.trim(),
   };
   await saveData();
