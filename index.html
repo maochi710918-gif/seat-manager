@@ -992,6 +992,10 @@ function showCheckInModal(seatId) {
       <input type="time" id="inp-eta">
     </div>
     <div class="form-group">
+      <label>特殊需求</label>
+      <textarea id="inp-special" rows="2" placeholder="例：需要充電、輪椅通道、嬰兒車..."></textarea>
+    </div>
+    <div class="form-group">
       <label>外觀特徵備註</label>
       <textarea id="inp-note" rows="2" placeholder="例：穿藍色外套、戴帽子、在看筆電"></textarea>
     </div>
@@ -1027,6 +1031,10 @@ function showInfoModal(seatId, info) {
     <div class="info-row">
       <span class="info-label">預估交車</span>
       <span class="info-value">${info.eta || '（未填寫）'}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">特殊需求</span>
+      <span class="info-value">${info.special || '（未填寫）'}</span>
     </div>
     <div class="info-row">
       <span class="info-label">外觀特徵</span>
@@ -1082,6 +1090,10 @@ function showEditModal(seatId) {
       <input type="time" id="inp-eta" value="${info.eta || ''}">
     </div>
     <div class="form-group">
+      <label>特殊需求</label>
+      <textarea id="inp-special" rows="2">${info.special || ''}</textarea>
+    </div>
+    <div class="form-group">
       <label>外觀特徵備註</label>
       <textarea id="inp-note" rows="2">${info.note || ''}</textarea>
     </div>
@@ -1101,6 +1113,7 @@ async function doCheckIn() {
     gender: document.getElementById('inp-gender').value,
     service: document.getElementById('inp-service').value,
     eta: document.getElementById('inp-eta').value,
+    special: document.getElementById('inp-special').value.trim(),
     note: document.getElementById('inp-note').value.trim(),
     time: Date.now()
   };
@@ -1120,6 +1133,7 @@ async function doUpdate(seatId) {
     gender: document.getElementById('inp-gender').value,
     service: document.getElementById('inp-service').value,
     eta: document.getElementById('inp-eta').value,
+    special: document.getElementById('inp-special').value.trim(),
     note: document.getElementById('inp-note').value.trim(),
   };
   await saveData();
