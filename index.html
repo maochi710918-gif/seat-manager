@@ -73,12 +73,15 @@
     padding: 16px;
   }
 
-  /* Yellow zone */
-  .zone-yellow .zone-header { background: #ffd600; color: #5a3e00; }
-  /* Blue zone */
-  .zone-blue .zone-header { background: #4a90d9; color: white; }
-  /* Green zone */
-  .zone-green .zone-header { background: #5aad6e; color: white; }
+  /* 黑區 (yellow bg) */
+  .zone-black .zone-header { background: #f5c518; color: #1a1a1a; }
+  .zone-black .zone-body   { background: #fffde7; }
+  /* 白區 (blue bg) */
+  .zone-white .zone-header { background: #4a90d9; color: white; }
+  .zone-white .zone-body   { background: #e8f0fb; }
+  /* 金區 (green bg) */
+  .zone-gold .zone-header  { background: #b8860b; color: white; }
+  .zone-gold .zone-body    { background: #f5f0e0; }
 
   /* Seat grids */
   .seats-grid {
@@ -87,17 +90,17 @@
     gap: 10px;
     justify-content: flex-start;
   }
-  .seats-grid.blue-grid {
+  .seats-grid.white-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 10px;
   }
-  .seats-grid.yellow-grid {
+  .seats-grid.black-grid {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
   }
-  .seats-grid.green-grid {
+  .seats-grid.gold-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 10px;
@@ -132,9 +135,10 @@
     font-size: 0.8rem;
   }
 
-  /* Empty state */
-  .seat.empty.circle  { background: #e8f5e9; border: 2px solid #81c784; color: #2e7d32; }
-  .seat.empty.square  { background: #e8f5e9; border: 2px solid #81c784; color: #2e7d32; }
+  /* Empty state per zone */
+  .zone-white .seat.empty.circle { background: #ddeeff; border: 2px solid #7ab3e0; color: #1a3c5e; }
+  .zone-gold  .seat.empty.square { background: #fdf3d0; border: 2px solid #c9a84c; color: #7a5800; }
+  .zone-black .seat.empty.circle { background: #333; border: 2px solid #555; color: #eee; }
 
   /* Occupied state */
   .seat.occupied {
@@ -441,12 +445,12 @@
 
   /* Responsive */
   @media (max-width: 600px) {
-    .seats-grid.blue-grid  { grid-template-columns: repeat(3, 1fr); }
-    .seats-grid.green-grid { grid-template-columns: repeat(4, 1fr); }
+    .seats-grid.white-grid { grid-template-columns: repeat(3, 1fr); }
+    .seats-grid.gold-grid  { grid-template-columns: repeat(4, 1fr); }
     .seat.circle { width: 62px; height: 62px; }
   }
   @media (max-width: 400px) {
-    .seats-grid.blue-grid  { grid-template-columns: repeat(3, 1fr); }
+    .seats-grid.white-grid { grid-template-columns: repeat(3, 1fr); }
     .seats-grid.green-grid { grid-template-columns: repeat(3, 1fr); }
     .seat.circle { width: 56px; height: 56px; font-size: 0.75rem; }
   }
@@ -511,27 +515,27 @@
     <span class="zoom-hint">點擊任意處關閉</span>
   </div>
 
-  <!-- Yellow Zone -->
-  <div class="zone-card zone-yellow">
-    <div class="zone-header">🟡 黃區（A區）— 圓形座位</div>
+  <!-- 白區 -->
+  <div class="zone-card zone-white">
+    <div class="zone-header">⚪ 白區 — 服務專員談區（圓形座位）</div>
     <div class="zone-body">
-      <div class="seats-grid yellow-grid" id="zone-a"></div>
+      <div class="seats-grid white-grid" id="zone-white"></div>
     </div>
   </div>
 
-  <!-- Blue Zone -->
-  <div class="zone-card zone-blue">
-    <div class="zone-header">🔵 藍區（B區）— 服專商談區</div>
+  <!-- 金區 -->
+  <div class="zone-card zone-gold">
+    <div class="zone-header">🟡 金區 — 方形座位</div>
     <div class="zone-body">
-      <div class="seats-grid blue-grid" id="zone-b"></div>
+      <div class="seats-grid gold-grid" id="zone-gold"></div>
     </div>
   </div>
 
-  <!-- Green Zone -->
-  <div class="zone-card zone-green">
-    <div class="zone-header">🟢 綠區（C區）— 方形座位</div>
+  <!-- 黑區 -->
+  <div class="zone-card zone-black">
+    <div class="zone-header">⚫ 黑區 — 圓形座位</div>
     <div class="zone-body">
-      <div class="seats-grid green-grid" id="zone-c"></div>
+      <div class="seats-grid black-grid" id="zone-black"></div>
     </div>
   </div>
 
@@ -555,9 +559,9 @@
 <script>
 // ─── Config ───────────────────────────────────────────────────────────────────
 const SEATS = {
-  A: ['A1','A2','A3','A4','A5'],
-  B: ['B1','B2','B3','B4','B5','B6','B7','B8','B9','B10','B11','B12','B13','B14'],
-  C: ['C1','C2','C3','C4','C5','C6','C7','C8','C9','C10']
+  白: ['白1','白2','白3','白4','白5','白6','白7','白8','白9','白10','白11','白12','白13','白14','B8'],
+  金: ['金1','金2','金3','金4','金5','金6','金7','金8','金9','金10'],
+  黑: ['黑1','黑2','黑3','黑4','黑5']
 };
 const STORAGE_KEY = 'seat_manager_data';
 
@@ -578,9 +582,9 @@ function saveData() {
 
 // ─── Render ───────────────────────────────────────────────────────────────────
 function renderAll() {
-  renderZone('zone-a', SEATS.A, 'circle');
-  renderZone('zone-b', SEATS.B, 'circle');
-  renderZone('zone-c', SEATS.C, 'square');
+  renderZone('zone-white', SEATS.白, 'circle');
+  renderZone('zone-gold',  SEATS.金, 'square');
+  renderZone('zone-black', SEATS.黑, 'circle');
   updateStats();
 }
 
@@ -609,7 +613,7 @@ function renderZone(containerId, seats, shape) {
 }
 
 function updateStats() {
-  const total = SEATS.A.length + SEATS.B.length + SEATS.C.length;
+  const total = SEATS.白.length + SEATS.金.length + SEATS.黑.length;
   const occupied = Object.keys(data).length;
   document.getElementById('stat-total').textContent = total;
   document.getElementById('stat-occupied').textContent = occupied;
