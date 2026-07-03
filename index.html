@@ -283,6 +283,10 @@
   .btn-primary { background: #2d6a9f; color: white; }
   .btn-success { background: #3aaa5c; color: white; }
   .btn-danger  { background: #e03a3a; color: white; }
+  .btn-warning { background: #f5a623; color: white; }
+  .move-seat-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .move-seat-btn { padding: 8px 14px; border: 2px solid #7ab3e0; background: #ddeeff; color: #1a3c5e; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.9rem; font-family: inherit; transition: background 0.15s; }
+  .move-seat-btn:hover { background: #b3d4f5; }
   .btn-secondary { background: #eee; color: #444; }
 
   /* Toast */
@@ -1047,6 +1051,7 @@ function showInfoModal(seatId, info) {
   `;
   document.getElementById('modal-footer').innerHTML = `
     <button class="btn btn-secondary" onclick="closeModal()">關閉</button>
+    <button class="btn btn-warning" onclick="showMoveSeatModal('${seatId}')">🔀 換座位</button>
     <button class="btn btn-primary" onclick="showEditModal('${seatId}')">✏️ 修改資料</button>
     <button class="btn btn-danger" onclick="doCheckOut('${seatId}')">🚗 結案離座</button>
   `;
@@ -1150,6 +1155,34 @@ async function doCheckOut(seatId) {
   renderAll();
   closeModal();
   showToast(`🚗 ${seatId} ${plate} 已結案離座`);
+}
+
+function showMoveSeatModal(fromSeatId) {
+  const allSeats = [...SEATS.白, ...SEATS.金, ...SEATS.黑];
+  const emptySeats = allSeats.filter(s => !data[s]);
+  document.getElementById('modal-title').textContent = '換座位';
+  if (emptySeats.length === 0) {
+    document.getElementById('modal-body').innerHTML = '<p style="color:#888;text-align:center;padding:20px">目前沒有空位可換</p>';
+    document.getElementById('modal-footer').innerHTML = `<button class="btn btn-secondary" onclick="showInfoModal('${fromSeatId}', data['${fromSeatId}'])">返回</button>`;
+    return;
+  }
+  document.getElementById('modal-body').innerHTML = `
+    <p style="font-size:0.9rem;color:#555;margin-bottom:8px">選擇要移到的空位（資訊將一併轉移）：</p>
+    <div class="move-seat-grid">
+      ${emptySeats.map(s => `<button class="move-seat-btn" onclick="doMoveSeat('${fromSeatId}','${s}')">${s}</button>`).join('')}
+    </div>
+  `;
+  document.getElementById('modal-footer').innerHTML = `<button class="btn btn-secondary" onclick="showInfoModal('${fromSeatId}', data['${fromSeatId}'])">返回</button>`;
+}
+
+async function doMoveSeat(fromId, toId) {
+  if (data[toId]) { showToast('⚠️ 該座位已有人，請重新選擇'); return; }
+  data[toId] = { ...data[fromId] };
+  delete data[fromId];
+  await saveData();
+  renderAll();
+  closeModal();
+  showToast(`🔀 已將資料從 ${fromId} 移至 ${toId}`);
 }
 
 function closeModal() {
