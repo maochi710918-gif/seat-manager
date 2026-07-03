@@ -825,29 +825,57 @@ const SEATS = {
   黑: ['黑1','黑2','黑3','黑4','黑5']
 };
 const STAFF = {
-  服務專員: ['李啟弘','張瑋涵','洪節慶','吳佳寧','柯建銘','朱辰芳','蔡承翰','自行登打'],
-  維修技師: ['許翼煌','鄭桿曜','洪澤正','蔡瑞祥','施智誠','侯伯陽','呂俊誼','張鴻恩','許世源','黃國栓','李健銘','蔡旻樺','葉燿州','陳慶輝','梅世昌','蕭顯猛','自行登打'],
-  登錄人員: ['李啟弘','張瑋涵','洪節慶','吳佳寧','柯建銘','朱辰芳','蔡承翰','張佳穎','潘孜寧','自行登打']
+  服務專員: ['李啟弘','張瑋涵','洪節慶','吳佳寧','柯建銘','朱辰芳','蔡承翰'],
+  維修技師: ['許翼煌','鄭桿曜','洪澤正','蔡瑞祥','施智誠','侯伯陽','呂俊誼','張鴻恩','許世源','黃國栓','李健銘','蔡旻樺','葉燿州','陳慶輝','梅世昌','蕭顯猛'],
+  登錄人員: ['李啟弘','張瑋涵','洪節慶','吳佳寧','柯建銘','朱辰芳','蔡承翰','張佳穎','潘孜寧']
 };
-function makeOptions(key, selected='') {
-  return `<option value="">未填</option>` + STAFF[key].map(n =>
-    `<option value="${n}" ${selected===n?'selected':''}>${n}</option>`
-  ).join('');
+function makeStaffField(key, inputId, selected='') {
+  const isCustom = selected && !STAFF[key].includes(selected);
+  const customVal = isCustom ? selected : '';
+  const showCustom = isCustom ? '' : 'display:none';
+  const opts = `<option value="">未填</option>` +
+    STAFF[key].map(n => `<option value="${n}" ${selected===n?'selected':''}>${n}</option>`).join('') +
+    `<option value="__custom__" ${isCustom?'selected':''}>自行登打…</option>`;
+  return `
+    <select id="${inputId}" onchange="toggleCustomStaff(this)">
+      ${opts}
+    </select>
+    <input type="text" id="${inputId}-custom" placeholder="請輸入姓名"
+           style="margin-top:4px;${showCustom}" value="${customVal}">
+  `;
+}
+function toggleCustomStaff(sel) {
+  const box = document.getElementById(sel.id + '-custom');
+  if (sel.value === '__custom__') {
+    box.style.display = '';
+    box.focus();
+  } else {
+    box.style.display = 'none';
+    box.value = '';
+  }
+}
+function getStaffValue(inputId) {
+  const sel = document.getElementById(inputId);
+  if (!sel) return '';
+  if (sel.value === '__custom__') {
+    return document.getElementById(inputId + '-custom').value.trim();
+  }
+  return sel.value;
 }
 function staffInputs(info={}) { return `
   <div class="form-group form-row-2">
     <div>
       <label>服務專員</label>
-      <select id="inp-advisor">${makeOptions('服務專員', info.advisor||'')}</select>
+      ${makeStaffField('服務專員', 'inp-advisor', info.advisor||'')}
     </div>
     <div>
       <label>維修技師</label>
-      <select id="inp-tech">${makeOptions('維修技師', info.tech||'')}</select>
+      ${makeStaffField('維修技師', 'inp-tech', info.tech||'')}
     </div>
   </div>
   <div class="form-group">
     <label>登錄／修改人員</label>
-    <select id="inp-recorder">${makeOptions('登錄人員', info.recorder||'')}</select>
+    ${makeStaffField('登錄人員', 'inp-recorder', info.recorder||'')}
   </div>
 `; }
 const STORAGE_KEY   = 'seat_manager_data';
@@ -1158,9 +1186,9 @@ async function doCheckIn() {
     gender: document.getElementById('inp-gender').value,
     service: document.getElementById('inp-service').value,
     eta: document.getElementById('inp-eta').value,
-    advisor: document.getElementById('inp-advisor').value,
-    tech: document.getElementById('inp-tech').value,
-    recorder: document.getElementById('inp-recorder').value,
+    advisor: getStaffValue('inp-advisor'),
+    tech: getStaffValue('inp-tech'),
+    recorder: getStaffValue('inp-recorder'),
     special: document.getElementById('inp-special').value.trim(),
     note: document.getElementById('inp-note').value.trim(),
     time: Date.now()
@@ -1181,9 +1209,9 @@ async function doUpdate(seatId) {
     gender: document.getElementById('inp-gender').value,
     service: document.getElementById('inp-service').value,
     eta: document.getElementById('inp-eta').value,
-    advisor: document.getElementById('inp-advisor').value,
-    tech: document.getElementById('inp-tech').value,
-    recorder: document.getElementById('inp-recorder').value,
+    advisor: getStaffValue('inp-advisor'),
+    tech: getStaffValue('inp-tech'),
+    recorder: getStaffValue('inp-recorder'),
     special: document.getElementById('inp-special').value.trim(),
     note: document.getElementById('inp-note').value.trim(),
   };
