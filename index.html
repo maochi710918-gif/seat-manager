@@ -662,6 +662,122 @@
   .sync-dot.error { background: #f44336; }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
   .sync-bar .sync-time { opacity: 0.6; }
+
+  /* ── 服務專員總表 ── */
+  .advisor-board-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    overflow: hidden;
+    margin-top: 0;
+  }
+  .advisor-board-header {
+    background: linear-gradient(135deg, #1a3c5e, #2d6a9f);
+    color: white;
+    padding: 14px 18px;
+    font-size: 1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .advisor-board-sub {
+    font-size: 0.8rem;
+    font-weight: 400;
+    opacity: 0.8;
+    margin-left: auto;
+  }
+  .advisor-board-body {
+    padding: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    min-height: 60px;
+  }
+  .advisor-empty {
+    color: #aaa;
+    font-size: 0.9rem;
+    margin: auto;
+  }
+  .advisor-col {
+    flex: 1 1 180px;
+    min-width: 160px;
+    max-width: 260px;
+    border-radius: 10px;
+    border: 2px solid #e8eef5;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .advisor-col-header {
+    background: #1a3c5e;
+    color: white;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .advisor-col-header .adv-count {
+    background: rgba(255,255,255,0.25);
+    border-radius: 10px;
+    padding: 1px 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .advisor-col-unassigned .advisor-col-header {
+    background: #888;
+  }
+  .advisor-customer {
+    padding: 8px 10px;
+    border-bottom: 1px solid #f0f4f8;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .advisor-customer:last-child { border-bottom: none; }
+  .advisor-customer:hover { background: #f0f6ff; }
+  .adv-seat-plate {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 3px;
+  }
+  .adv-seat {
+    background: #1a3c5e;
+    color: white;
+    border-radius: 5px;
+    padding: 1px 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .adv-plate {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #c0392b;
+    letter-spacing: 1px;
+  }
+  .adv-name {
+    font-size: 0.78rem;
+    color: #555;
+  }
+  .adv-meta {
+    display: flex;
+    gap: 6px;
+    margin-top: 3px;
+    flex-wrap: wrap;
+  }
+  .adv-tag {
+    font-size: 0.7rem;
+    padding: 1px 6px;
+    border-radius: 10px;
+    background: #e8f0fb;
+    color: #2d6a9f;
+    white-space: nowrap;
+  }
+  .adv-tag.eta { background: #fff3cd; color: #856404; }
+  .adv-tag.overdue { background: #fde8e8; color: #c0392b; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -758,6 +874,7 @@
     </div><!-- /zones-col -->
 
     <!-- Right: sidebar -->
+
     <div class="sidebar">
 
       <!-- 總表 -->
@@ -799,6 +916,17 @@
     </div><!-- /sidebar -->
 
   </div><!-- /content-layout -->
+
+  <!-- 服務專員總表 -->
+  <div class="advisor-board-card">
+    <div class="advisor-board-header">
+      👨‍💼 服務專員總表
+      <span class="advisor-board-sub" id="advisor-board-sub"></span>
+    </div>
+    <div class="advisor-board-body" id="advisor-board-body">
+      <div class="advisor-empty">目前無客人在座</div>
+    </div>
+  </div>
 
 </div>
 
@@ -962,6 +1090,73 @@ function renderAll() {
   renderZone('zone-black', SEATS.黑, 'circle');
   updateStats();
   updateSummaryTable();
+  renderAdvisorBoard();
+}
+
+function renderAdvisorBoard() {
+  const body = document.getElementById('advisor-board-body');
+  const sub  = document.getElementById('advisor-board-sub');
+  const entries = Object.entries(data);
+  if (entries.length === 0) {
+    body.innerHTML = '<div class="advisor-empty">目前無客人在座</div>';
+    sub.textContent = '';
+    return;
+  }
+
+  // Group by advisor
+  const groups = {};
+  entries.forEach(([seatId, info]) => {
+    const key = info.advisor && info.advisor.trim() ? info.advisor.trim() : '__none__';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push([seatId, info]);
+  });
+
+  // Sort each group by check-in time
+  Object.values(groups).forEach(arr => arr.sort((a,b) => (a[1].time||0)-(b[1].time||0)));
+
+  // Advisor order: defined list first, then unassigned last
+  const advisorOrder = STAFF['服務專員'];
+  const keys = [
+    ...advisorOrder.filter(n => groups[n]),
+    ...Object.keys(groups).filter(k => k !== '__none__' && !advisorOrder.includes(k)),
+    ...(groups['__none__'] ? ['__none__'] : [])
+  ];
+
+  const now = Date.now();
+
+  body.innerHTML = keys.map(key => {
+    const customers = groups[key];
+    const isUnassigned = key === '__none__';
+    const label = isUnassigned ? '未指定專員' : key;
+    const rows = customers.map(([seatId, info]) => {
+      const etaTag = info.eta ? (() => {
+        const [h,m] = info.eta.split(':').map(Number);
+        const etaMs = new Date().setHours(h,m,0,0);
+        const late = etaMs < now;
+        return `<span class="adv-tag eta ${late?'overdue':''}">${late?'⚠️ ':'🕐 '}${info.eta}</span>`;
+      })() : '';
+      const svcTag = info.service ? `<span class="adv-tag">${info.service}</span>` : '';
+      return `
+        <div class="advisor-customer" onclick="handleSeatClick('${seatId}')">
+          <div class="adv-seat-plate">
+            <span class="adv-seat">${seatId}</span>
+            <span class="adv-plate">${info.plate}</span>
+          </div>
+          ${info.name ? `<div class="adv-name">${info.name}</div>` : ''}
+          ${etaTag || svcTag ? `<div class="adv-meta">${svcTag}${etaTag}</div>` : ''}
+        </div>`;
+    }).join('');
+    return `
+      <div class="advisor-col ${isUnassigned?'advisor-col-unassigned':''}">
+        <div class="advisor-col-header">
+          <span>${label}</span>
+          <span class="adv-count">${customers.length} 位</span>
+        </div>
+        ${rows}
+      </div>`;
+  }).join('');
+
+  sub.textContent = `共 ${entries.length} 位客人 · ${keys.filter(k=>k!=='__none__').length} 位專員`;
 }
 
 function renderZone(containerId, seats, shape) {
