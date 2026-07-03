@@ -824,6 +824,32 @@ const SEATS = {
   金: ['金1','金2','金3','金4','金5','金6','金7','金8','金9','金10'],
   黑: ['黑1','黑2','黑3','黑4','黑5']
 };
+const STAFF = {
+  服務專員: ['李啟弘','張瑋涵','洪節慶','吳佳寧','柯建銘','朱辰芳','蔡承翰','自行登打'],
+  維修技師: ['許翼煌','鄭桿曜','洪澤正','蔡瑞祥','施智誠','侯伯陽','呂俊誼','張鴻恩','許世源','黃國栓','李健銘','蔡旻樺','葉燿州','陳慶輝','梅世昌','蕭顯猛','自行登打'],
+  登錄人員: ['李啟弘','張瑋涵','洪節慶','吳佳寧','柯建銘','朱辰芳','蔡承翰','張佳穎','潘孜寧','自行登打']
+};
+function makeOptions(key, selected='') {
+  return `<option value="">未填</option>` + STAFF[key].map(n =>
+    `<option value="${n}" ${selected===n?'selected':''}>${n}</option>`
+  ).join('');
+}
+function staffInputs(info={}) { return `
+  <div class="form-group form-row-2">
+    <div>
+      <label>服務專員</label>
+      <select id="inp-advisor">${makeOptions('服務專員', info.advisor||'')}</select>
+    </div>
+    <div>
+      <label>維修技師</label>
+      <select id="inp-tech">${makeOptions('維修技師', info.tech||'')}</select>
+    </div>
+  </div>
+  <div class="form-group">
+    <label>登錄／修改人員</label>
+    <select id="inp-recorder">${makeOptions('登錄人員', info.recorder||'')}</select>
+  </div>
+`; }
 const STORAGE_KEY   = 'seat_manager_data';
 const FLOORPLAN_KEY = 'seat_manager_floorplan';
 
@@ -995,6 +1021,7 @@ function showCheckInModal(seatId) {
       <label>預估交車時間</label>
       <input type="time" id="inp-eta">
     </div>
+    ${staffInputs()}
     <div class="form-group">
       <label>特殊需求</label>
       <textarea id="inp-special" rows="2" placeholder="例：需要充電、輪椅通道、嬰兒車..."></textarea>
@@ -1043,6 +1070,18 @@ function showInfoModal(seatId, info) {
     <div class="info-row">
       <span class="info-label">外觀特徵</span>
       <span class="info-value">${info.note || '（未填寫）'}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">服務專員</span>
+      <span class="info-value">${info.advisor || '（未填寫）'}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">維修技師</span>
+      <span class="info-value">${info.tech || '（未填寫）'}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">登錄人員</span>
+      <span class="info-value">${info.recorder || '（未填寫）'}</span>
     </div>
     <div class="info-row">
       <span class="info-label">入座時間</span>
@@ -1094,6 +1133,7 @@ function showEditModal(seatId) {
       <label>預估交車時間</label>
       <input type="time" id="inp-eta" value="${info.eta || ''}">
     </div>
+    ${staffInputs(info)}
     <div class="form-group">
       <label>特殊需求</label>
       <textarea id="inp-special" rows="2">${info.special || ''}</textarea>
@@ -1118,6 +1158,9 @@ async function doCheckIn() {
     gender: document.getElementById('inp-gender').value,
     service: document.getElementById('inp-service').value,
     eta: document.getElementById('inp-eta').value,
+    advisor: document.getElementById('inp-advisor').value,
+    tech: document.getElementById('inp-tech').value,
+    recorder: document.getElementById('inp-recorder').value,
     special: document.getElementById('inp-special').value.trim(),
     note: document.getElementById('inp-note').value.trim(),
     time: Date.now()
@@ -1138,6 +1181,9 @@ async function doUpdate(seatId) {
     gender: document.getElementById('inp-gender').value,
     service: document.getElementById('inp-service').value,
     eta: document.getElementById('inp-eta').value,
+    advisor: document.getElementById('inp-advisor').value,
+    tech: document.getElementById('inp-tech').value,
+    recorder: document.getElementById('inp-recorder').value,
     special: document.getElementById('inp-special').value.trim(),
     note: document.getElementById('inp-note').value.trim(),
   };
