@@ -702,6 +702,54 @@
     font-size: 0.9rem;
     margin: auto;
   }
+
+  /* ── 米漢堡總計表 ── */
+  .burger-board-card {
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    margin: 0 0 16px;
+    overflow: hidden;
+  }
+  .burger-board-header {
+    background: linear-gradient(135deg, #b5541a, #e07b3a);
+    color: white;
+    padding: 12px 20px;
+    font-weight: 700;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .burger-total-badge {
+    background: white;
+    color: #b5541a;
+    border-radius: 20px;
+    padding: 2px 12px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-left: auto;
+  }
+  .burger-board-body {
+    padding: 12px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .burger-item {
+    background: #fff6ee;
+    border: 1.5px solid #e8b88a;
+    border-radius: 10px;
+    padding: 7px 14px;
+    font-size: 0.88rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .burger-item .bi-seat { color: #888; font-size: 0.78rem; }
+  .burger-item .bi-plate { font-weight: 700; color: #1a3c5e; }
+  .burger-item .bi-qty { background: #e07b3a; color: white; border-radius: 50%; width: 22px; height: 22px; display:flex; align-items:center; justify-content:center; font-size:0.82rem; font-weight:700; flex-shrink:0; }
+  .burger-empty { color: #aaa; font-size: 0.9rem; padding: 12px 16px; }
   .advisor-col {
     flex: 1 1 180px;
     min-width: 160px;
@@ -920,6 +968,17 @@
 
   </div><!-- /content-layout -->
 
+  <!-- 米漢堡總計表 -->
+  <div class="burger-board-card">
+    <div class="burger-board-header">
+      🍔 米漢堡需求總計
+      <span class="burger-total-badge" id="burger-total-badge">共 0 份</span>
+    </div>
+    <div id="burger-board-body">
+      <div class="burger-empty">目前無米漢堡需求</div>
+    </div>
+  </div>
+
   <!-- 服務專員總表 -->
   <div class="advisor-board-card">
     <div class="advisor-board-header">
@@ -1094,6 +1153,38 @@ function renderAll() {
   updateStats();
   updateSummaryTable();
   renderAdvisorBoard();
+  renderBurgerBoard();
+}
+
+function renderBurgerBoard() {
+  const body = document.getElementById('burger-board-body');
+  const badge = document.getElementById('burger-total-badge');
+  if (!body) return;
+  const orders = Object.entries(data)
+    .filter(([, info]) => info.burger > 0)
+    .sort((a, b) => a[0].localeCompare(b[0], 'zh-TW'));
+  const total = orders.reduce((s, [, info]) => s + (info.burger || 0), 0);
+  badge.textContent = `共 ${total} 份`;
+  if (orders.length === 0) {
+    body.innerHTML = '<div class="burger-empty">目前無米漢堡需求</div>';
+    return;
+  }
+  body.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'burger-board-body';
+  orders.forEach(([seat, info]) => {
+    const item = document.createElement('div');
+    item.className = 'burger-item';
+    item.innerHTML = `
+      <span class="bi-qty">${info.burger}</span>
+      <span>
+        <span class="bi-plate">${info.plate}</span>
+        <span class="bi-seat"> · ${seat}</span>
+        ${info.name ? `<span class="bi-seat">（${info.name}）</span>` : ''}
+      </span>`;
+    wrap.appendChild(item);
+  });
+  body.appendChild(wrap);
 }
 
 function renderAdvisorBoard() {
@@ -1252,6 +1343,14 @@ function showCheckInModal(seatId) {
     </div>
     ${staffInputs()}
     <div class="form-group">
+      <label>🍔 米漢堡需求（份數）</label>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button type="button" onclick="adjustBurger(-1)" style="width:36px;height:36px;font-size:1.2rem;border:1.5px solid #d0d5dd;border-radius:8px;background:#fff;cursor:pointer">−</button>
+        <input type="number" id="inp-burger" value="0" min="0" max="9" style="width:60px;text-align:center;font-size:1.1rem;font-weight:700;padding:6px;border:1.5px solid #d0d5dd;border-radius:8px">
+        <button type="button" onclick="adjustBurger(1)" style="width:36px;height:36px;font-size:1.2rem;border:1.5px solid #d0d5dd;border-radius:8px;background:#fff;cursor:pointer">＋</button>
+      </div>
+    </div>
+    <div class="form-group">
       <label>特殊需求</label>
       <textarea id="inp-special" rows="2" placeholder="例：需要充電、輪椅通道、嬰兒車..."></textarea>
     </div>
@@ -1313,6 +1412,10 @@ function showInfoModal(seatId, info) {
       <span class="info-value">${info.recorder || '（未填寫）'}</span>
     </div>
     <div class="info-row">
+      <span class="info-label">🍔 米漢堡</span>
+      <span class="info-value">${info.burger ? info.burger + ' 份' : '不需要'}</span>
+    </div>
+    <div class="info-row">
       <span class="info-label">入座時間</span>
       <span class="info-value time-display">${since}</span>
     </div>
@@ -1364,6 +1467,14 @@ function showEditModal(seatId) {
     </div>
     ${staffInputs(info)}
     <div class="form-group">
+      <label>🍔 米漢堡需求（份數）</label>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button type="button" onclick="adjustBurger(-1)" style="width:36px;height:36px;font-size:1.2rem;border:1.5px solid #d0d5dd;border-radius:8px;background:#fff;cursor:pointer">−</button>
+        <input type="number" id="inp-burger" value="${info.burger || 0}" min="0" max="9" style="width:60px;text-align:center;font-size:1.1rem;font-weight:700;padding:6px;border:1.5px solid #d0d5dd;border-radius:8px">
+        <button type="button" onclick="adjustBurger(1)" style="width:36px;height:36px;font-size:1.2rem;border:1.5px solid #d0d5dd;border-radius:8px;background:#fff;cursor:pointer">＋</button>
+      </div>
+    </div>
+    <div class="form-group">
       <label>特殊需求</label>
       <textarea id="inp-special" rows="2">${info.special || ''}</textarea>
     </div>
@@ -1390,6 +1501,7 @@ async function doCheckIn() {
     advisor: getStaffValue('inp-advisor'),
     tech: getStaffValue('inp-tech'),
     recorder: getStaffValue('inp-recorder'),
+    burger: parseInt(document.getElementById('inp-burger')?.value) || 0,
     special: document.getElementById('inp-special').value.trim(),
     note: document.getElementById('inp-note').value.trim(),
     time: Date.now()
@@ -1413,6 +1525,7 @@ async function doUpdate(seatId) {
     advisor: getStaffValue('inp-advisor'),
     tech: getStaffValue('inp-tech'),
     recorder: getStaffValue('inp-recorder'),
+    burger: parseInt(document.getElementById('inp-burger')?.value) || 0,
     special: document.getElementById('inp-special').value.trim(),
     note: document.getElementById('inp-note').value.trim(),
   };
@@ -1458,6 +1571,12 @@ async function doMoveSeat(fromId, toId) {
   renderAll();
   closeModal();
   showToast(`🔀 已將資料從 ${fromId} 移至 ${toId}`);
+}
+
+function adjustBurger(delta) {
+  const el = document.getElementById('inp-burger');
+  if (!el) return;
+  el.value = Math.max(0, Math.min(9, (parseInt(el.value) || 0) + delta));
 }
 
 function closeModal() {
