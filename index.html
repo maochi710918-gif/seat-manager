@@ -1899,13 +1899,8 @@ function closeZoom() {
 }
 
 function loadFloorplan() {
-  const saved = localStorage.getItem(FLOORPLAN_KEY);
-  if (saved) {
-    showFloorplan(saved);
-  } else {
-    // Show default bundled floor plan
-    showFloorplan('floorplan.jpg');
-  }
+  localStorage.removeItem(FLOORPLAN_KEY);
+  showFloorplan('floorplan.jpg');
 }
 
 function showFloorplan(src) {
