@@ -829,7 +829,50 @@
   }
   .adv-tag.eta { background: #fff3cd; color: #856404; }
   .adv-tag.overdue { background: #fde8e8; color: #c0392b; font-weight: 700; }
+
+  /* ── 統計面板 ── */
+  .stats-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6); z-index: 2000;
+    align-items: flex-start; justify-content: center;
+    padding: 16px; overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .stats-overlay.open { display: flex; }
+  .stats-modal {
+    background: white; border-radius: 16px; width: 100%;
+    max-width: 860px; box-shadow: 0 8px 32px rgba(0,0,0,.3);
+    margin-top: 20px; margin-bottom: 20px;
+  }
+  .stats-header {
+    background: linear-gradient(135deg,#1a3c5e,#2d6a9f);
+    color: white; padding: 14px 20px; border-radius: 16px 16px 0 0;
+    display: flex; justify-content: space-between; align-items: center;
+    font-weight: 700; font-size: 1.05rem;
+  }
+  .stats-header button { background: rgba(255,255,255,.2); border: none; color: white; border-radius: 8px; padding: 4px 12px; cursor: pointer; font-size: 1rem; }
+  .stats-body { padding: 16px 20px; }
+  .stats-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+  .stats-controls input[type=month] { padding: 8px 12px; border: 1.5px solid #d0d5dd; border-radius: 8px; font-size: 0.95rem; font-family: inherit; }
+  .btn-stats-query { background: #2d6a9f; color: white; border: none; border-radius: 8px; padding: 8px 18px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .btn-stats-export { background: #1e7e34; color: white; border: none; border-radius: 8px; padding: 8px 18px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .stats-summary-grid { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .stats-kpi { background: #f0f6ff; border-radius: 10px; padding: 10px 18px; text-align: center; min-width: 100px; }
+  .stats-kpi .kpi-num { font-size: 1.8rem; font-weight: 700; color: #1a3c5e; }
+  .stats-kpi .kpi-lbl { font-size: 0.75rem; color: #666; margin-top: 2px; }
+  .stats-section-title { font-weight: 700; color: #1a3c5e; font-size: 0.9rem; margin: 12px 0 8px; border-bottom: 2px solid #e0e8f0; padding-bottom: 4px; }
+  .stats-advisor-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .stats-adv-item { background: #f4f7fb; border: 1.5px solid #d0dcea; border-radius: 8px; padding: 6px 14px; font-size: 0.85rem; }
+  .stats-adv-item strong { color: #1a3c5e; }
+  .stats-table-wrap { overflow-x: auto; }
+  .stats-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .stats-table th { background: #1a3c5e; color: white; padding: 7px 10px; text-align: left; white-space: nowrap; }
+  .stats-table td { padding: 6px 10px; border-bottom: 1px solid #eee; white-space: nowrap; }
+  .stats-table tr:hover td { background: #f0f6ff; }
+  .stats-empty { color: #aaa; text-align: center; padding: 30px; }
+  .btn-open-stats { background: linear-gradient(135deg,#1a3c5e,#2d6a9f); color: white; border: none; border-radius: 10px; padding: 10px 20px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 0.9rem; margin: 0 0 16px; }
 </style>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -981,9 +1024,9 @@
 
   <!-- 服務專員總表 -->
   <div class="advisor-board-card">
-    <div class="advisor-board-header">
-      👨‍💼 服務專員總表
-      <span class="advisor-board-sub" id="advisor-board-sub"></span>
+    <div class="advisor-board-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+      <span>👨‍💼 服務專員總表 <span class="advisor-board-sub" id="advisor-board-sub"></span></span>
+      <button class="btn-open-stats" onclick="openStats()" style="margin:0;padding:7px 16px;font-size:0.85rem;">📊 月統計 / 匯出 Excel</button>
     </div>
     <div class="advisor-board-body" id="advisor-board-body">
       <div class="advisor-empty">目前無客人在座</div>
@@ -1006,6 +1049,38 @@
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
+
+<!-- 統計面板 -->
+<div class="stats-overlay" id="stats-overlay">
+  <div class="stats-modal">
+    <div class="stats-header">
+      <span>📊 月統計報表</span>
+      <button onclick="closeStats()">✕</button>
+    </div>
+    <div class="stats-body">
+      <div class="stats-controls">
+        <input type="month" id="stats-month" />
+        <button class="btn-stats-query" onclick="loadStats()">查詢</button>
+        <button class="btn-stats-export" onclick="exportStatsExcel()">⬇ 匯出 Excel</button>
+      </div>
+      <div class="stats-summary-grid" id="stats-summary"></div>
+      <div class="stats-section-title">服務專員登錄數</div>
+      <div class="stats-advisor-grid" id="stats-advisor-grid"></div>
+      <div class="stats-section-title">明細紀錄</div>
+      <div class="stats-table-wrap">
+        <table class="stats-table">
+          <thead><tr>
+            <th>#</th><th>座位</th><th>車牌</th><th>車主</th><th>性別</th>
+            <th>服務項目</th><th>服務專員</th><th>維修技師</th><th>登錄人員</th>
+            <th>預估交車</th><th>特殊需求</th><th>外觀特徵</th>
+            <th>入座時間</th><th>結案時間</th><th>停留(分)</th>
+          </tr></thead>
+          <tbody id="stats-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -1538,11 +1613,145 @@ async function doUpdate(seatId) {
 async function doCheckOut(seatId) {
   const plate = data[seatId]?.plate || '';
   if (!confirm(`確定要讓 ${seatId}（${plate}）結案離座？`)) return;
+  const record = { ...data[seatId], seatId, checkOutTime: new Date().toISOString() };
+  await saveHistory(record);
   delete data[seatId];
   await saveData();
   renderAll();
   closeModal();
   showToast(`🚗 ${seatId} ${plate} 已結案離座`);
+}
+
+// ── 歷史紀錄 ──────────────────────────────────────────────────────────────────
+const HIST_BASE = `https://firestore.googleapis.com/v1/projects/${FS_PROJECT}/databases/(default)/documents/history`;
+
+async function saveHistory(record) {
+  const now = new Date();
+  const docId = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const url = `${HIST_BASE}/${docId}?key=${FS_API_KEY}`;
+  try {
+    // fetch existing doc
+    const getRes = await fetch(url);
+    let records = [];
+    if (getRes.ok) {
+      const doc = await getRes.json();
+      const arr = doc.fields?.records?.arrayValue?.values || [];
+      records = arr.map(v => JSON.parse(v.stringValue));
+    }
+    records.push(record);
+    const body = { fields: { records: { arrayValue: { values: records.map(r => ({ stringValue: JSON.stringify(r) })) } } } };
+    await fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  } catch(e) { console.warn('saveHistory error', e); }
+}
+
+// ── 統計面板 ──────────────────────────────────────────────────────────────────
+let statsRecords = [];
+
+function openStats() {
+  const now = new Date();
+  document.getElementById('stats-month').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  document.getElementById('stats-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  loadStats();
+}
+function closeStats() {
+  document.getElementById('stats-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function loadStats() {
+  const month = document.getElementById('stats-month').value;
+  if (!month) return;
+  const url = `${HIST_BASE}/${month}?key=${FS_API_KEY}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) { statsRecords = []; }
+    else {
+      const doc = await res.json();
+      const arr = doc.fields?.records?.arrayValue?.values || [];
+      statsRecords = arr.map(v => JSON.parse(v.stringValue));
+    }
+  } catch(e) { statsRecords = []; }
+  renderStatsSummary();
+  renderStatsTable();
+}
+
+function renderStatsSummary() {
+  const total = statsRecords.length;
+  const advisorCount = {};
+  statsRecords.forEach(r => {
+    const adv = r.advisor || r.staff || '未知';
+    advisorCount[adv] = (advisorCount[adv] || 0) + 1;
+  });
+  document.getElementById('stats-summary').innerHTML = `
+    <div class="stats-kpi"><div class="kpi-num">${total}</div><div class="kpi-lbl">總車輛數</div></div>
+  `;
+  const grid = document.getElementById('stats-advisor-grid');
+  if (Object.keys(advisorCount).length === 0) {
+    grid.innerHTML = '<span style="color:#aaa;font-size:.85rem">無資料</span>';
+  } else {
+    grid.innerHTML = Object.entries(advisorCount).sort((a,b)=>b[1]-a[1])
+      .map(([name,cnt]) => `<div class="stats-adv-item"><strong>${name}</strong> ${cnt} 台</div>`).join('');
+  }
+}
+
+function renderStatsTable() {
+  const tbody = document.getElementById('stats-table-body');
+  if (statsRecords.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="15" class="stats-empty">本月無結案紀錄</td></tr>';
+    return;
+  }
+  tbody.innerHTML = statsRecords.map((r, i) => {
+    const inT = r.time ? new Date(r.time) : null;
+    const outT = r.checkOutTime ? new Date(r.checkOutTime) : null;
+    const stay = (inT && outT) ? Math.round((outT - inT) / 60000) : '-';
+    const fmt = d => d ? d.toLocaleString('zh-TW',{hour12:false}) : '-';
+    return `<tr>
+      <td>${i+1}</td>
+      <td>${r.seatId||''}</td>
+      <td>${r.plate||''}</td>
+      <td>${r.name||''}</td>
+      <td>${r.gender||''}</td>
+      <td>${r.service||''}</td>
+      <td>${r.advisor||''}</td>
+      <td>${r.tech||''}</td>
+      <td>${r.recorder||''}</td>
+      <td>${r.eta||''}</td>
+      <td>${r.special||''}</td>
+      <td>${r.note||''}</td>
+      <td>${fmt(inT)}</td>
+      <td>${fmt(outT)}</td>
+      <td>${stay}</td>
+    </tr>`;
+  }).join('');
+}
+
+function exportStatsExcel() {
+  if (!statsRecords.length) { alert('無資料可匯出'); return; }
+  const month = document.getElementById('stats-month').value || 'stats';
+  const headers = ['#','座位','車牌','車主','性別','服務項目','服務專員','維修技師','登錄人員','預估交車','特殊需求','備註','入座時間','結案時間','停留(分)'];
+  const rows = statsRecords.map((r, i) => {
+    const inT = r.time ? new Date(r.time) : null;
+    const outT = r.checkOutTime ? new Date(r.checkOutTime) : null;
+    const stay = (inT && outT) ? Math.round((outT - inT) / 60000) : '';
+    const fmt = d => d ? d.toLocaleString('zh-TW',{hour12:false}) : '';
+    return [i+1, r.seatId||'', r.plate||'', r.name||'', r.gender||'', r.service||'',
+      r.advisor||'', r.tech||'', r.recorder||'', r.eta||'',
+      r.special||'', r.note||'', fmt(inT), fmt(outT), stay];
+  });
+  // 服務專員小計
+  const advisorCount = {};
+  statsRecords.forEach(r => { const a = r.advisor||r.staff||'未知'; advisorCount[a]=(advisorCount[a]||0)+1; });
+  const summaryRows = [[], ['服務專員統計'], ['專員','車輛數'],
+    ...Object.entries(advisorCount).sort((a,b)=>b[1]-a[1]).map(([n,c])=>[n,c]),
+    [], ['總車輛數', statsRecords.length]];
+
+  const wb = XLSX.utils.book_new();
+  const ws1 = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  XLSX.utils.book_append_sheet(wb, ws1, '明細');
+  const ws2 = XLSX.utils.aoa_to_sheet(summaryRows);
+  XLSX.utils.book_append_sheet(wb, ws2, '統計');
+  XLSX.writeFile(wb, `濱江廠_${month}.xlsx`);
 }
 
 function showMoveSeatModal(fromSeatId) {
